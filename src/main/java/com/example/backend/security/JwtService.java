@@ -2,11 +2,9 @@ package com.example.backend.security;
 
 import com.example.backend.model.Usuario;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
