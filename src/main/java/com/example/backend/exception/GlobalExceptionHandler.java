@@ -10,6 +10,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 // Un solo lugar que decide el formato y el código HTTP de todos los errores de la API
@@ -25,31 +26,45 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Datos inválidos", "Revisa los campos indicados", errores);
     }
 
-    // 400: el JSON llegó mal formado o con un tipo incorrecto (ej: texto donde va un número)
+    // 400: el JSON llegó mal formado o con un tipo incorrecto
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleJsonInvalido(HttpMessageNotReadableException ex) {
         return build(HttpStatus.BAD_REQUEST, "JSON inválido", "El cuerpo de la petición no es válido", null);
     }
 
-    // 404: la ruta no existe (ej: /api/v1/algo-que-no-existe)
+    // 400: regla de negocio con datos inválidos (ej: intentar cambiar el RUN de un usuario)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleArgumentoInvalido(IllegalArgumentException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Solicitud inválida", ex.getMessage(), null);
+    }
+
+    // 404: la ruta no existe
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleRutaInexistente(NoResourceFoundException ex) {
         return build(HttpStatus.NOT_FOUND, "Ruta no encontrada", "La ruta solicitada no existe", null);
     }
 
-    // 404: el recurso pedido no existe (ej: producto con un id que no está en la base)
+    // 404: el recurso pedido no existe
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ResponseEntity<ErrorResponse> handleNoEncontrado(RecursoNoEncontradoException ex) {
         return build(HttpStatus.NOT_FOUND, "No encontrado", ex.getMessage(), null);
     }
 
-    // 409: duplicados (correo, RUN, código), stock insuficiente o categoría con productos
+    // 409: duplicados, stock insuficiente o categoría con productos
     @ExceptionHandler(ConflictoException.class)
     public ResponseEntity<ErrorResponse> handleConflicto(ConflictoException ex) {
         return build(HttpStatus.CONFLICT, "Conflicto", ex.getMessage(), null);
     }
 
-    // 500: cualquier otro error inesperado. No se expone el detalle técnico al cliente.
+    // Códigos HTTP lanzados a propósito desde el código (ej: 401 sin sesión)
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleStatus(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        String mensaje = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+        return build(status, status.getReasonPhrase(), mensaje, null);
+    }
+
+    // 500: cualquier otro error. No se expone el detalle técnico al cliente.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenerico(Exception ex) {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno", "Ocurrió un error inesperado", null);
