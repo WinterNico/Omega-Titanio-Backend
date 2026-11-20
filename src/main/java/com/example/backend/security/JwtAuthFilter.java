@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,7 +40,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     var autenticacion = new UsernamePasswordAuthenticationToken(
                             claims.getSubject(),
                             null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + rol)));
+                            List.of(new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase(Locale.ROOT))));
                     SecurityContextHolder.getContext().setAuthentication(autenticacion);
                 }
             } catch (JwtException | IllegalArgumentException e) {
